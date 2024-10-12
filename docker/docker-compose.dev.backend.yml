@@ -1,9 +1,9 @@
 services:
   backend:
-    image: my-relationship-app-backend
+    image: my-relationship-app-backend-dev
     build:
       context: ../backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     environment:
       - PROJECT_PATH=/app/MyRelationshipApp.API/
       - ASPNETCORE_ENVIRONMENT=Development

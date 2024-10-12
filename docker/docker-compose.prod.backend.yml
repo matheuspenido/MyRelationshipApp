@@ -1,0 +1,19 @@
+services:
+  backend:
+    image: my-relationship-app-backend-prod
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.prod
+      args:
+        PROJECT_PATH: ./MyRelationshipApp.API
+    environment:
+      - PROJECT_PATH=./MyRelationshipApp.API
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:8443;http://+:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+    ports:
+      - "5000:8080"
+      - "5001:8443"
+    volumes:
+      - ../backend/certs:/app/https:ro

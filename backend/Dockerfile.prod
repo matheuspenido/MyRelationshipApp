@@ -1,0 +1,32 @@
+#Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /source
+
+# Argument to accept the project path (Looking for a way to be automated soon)
+ARG PROJECT_PATH
+
+# Copy the files
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore 
+
+# Publish the project defined by PROJECT_PATH arg
+RUN dotnet publish ${PROJECT_PATH} -c Release -o /app/publish
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy the published files from the build stage
+COPY --from=build /app/publish .
+
+# Expose the default ports for .NET 8 (8080 for HTTP and 8443 for HTTPS)
+EXPOSE 8080
+EXPOSE 8443
+
+ENV ASPNETCORE_URLS="https://+:8443;http://+:8080"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+
+ENTRYPOINT ["sh", "-c", "dotnet /app/${PROJECT_PATH}.dll"]

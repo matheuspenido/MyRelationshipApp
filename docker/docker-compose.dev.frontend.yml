@@ -3,7 +3,7 @@ services:
     image: my-relationship-app-client
     build:
       context: ../frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     environment:
       - HOST=0.0.0.0
     ports:

@@ -40,8 +40,9 @@ EXPOSE 8081
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
 CMD dotnet watch run --project "$PROJECT_PATH" --urls "http://+:8080;https://+:8081" --no-hot-reload
-docker build -t my-relationship-app .
+
 build the image, passing the executable project to env variable PROJECT_PATH
+docker build --build-arg PROJECT_PATH=./MyRelationshipApp.API -t my-relationship-app .
 
 Run the build image, listening from 8080 to 5000
 inside backend folder:
@@ -127,3 +128,70 @@ run the docker commands to test the project:
 
 docker build -t client .
 docker run -it -v $(pwd):/app -p 4200:4200 client
+
+Rename the previous Dockerfile inside backend folder to Dockerfile.dev
+Create a second Dockerfile.prod file, next to the Dockerfile.dev with the following content:
+
+#Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /source
+
+# Argument to accept the project path (Looking for a way to be automated soon)
+ARG PROJECT_PATH
+
+# Copy the files
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore 
+
+# Publish the project defined by PROJECT_PATH arg
+RUN dotnet publish ${PROJECT_PATH} -c Release -o /app/publish
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy the published files from the build stage
+COPY --from=build /app/publish .
+
+# Expose the default ports for .NET 8 (8080 for HTTP and 8443 for HTTPS)
+EXPOSE 8080
+EXPOSE 8443
+
+ENV ASPNETCORE_URLS="https://+:8443;http://+:8080"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+
+ENTRYPOINT ["sh", "-c", "dotnet /app/${PROJECT_PATH}.dll"]
+
+To build this image:
+docker build -f Dockerfile.prod --build-arg PROJECT_PATH=./MyRelationshipApp.API -t my-relationship-app .
+
+To run this image:
+docker run -e PROJECT_PATH=./MyRelationshipApp.API -p 5000:8080 -p 5001:8443 -it my-relationship-app
+
+Create the docker compose file docker-compose.prod.backend.yml:
+
+services:
+  backend:
+    image: my-relationship-app-backend-prod
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.prod
+      args:
+        PROJECT_PATH: ./MyRelationshipApp.API
+    environment:
+      - PROJECT_PATH=./MyRelationshipApp.API
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:8443;http://+:8080
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+    ports:
+      - "5000:8080"
+      - "5001:8443"
+    volumes:
+      - ../backend/certs:/app/https:ro
+
+ps: the volumes for cert is essential to allow the developer update the certificate without copying it directly to the image.
+
