@@ -1,0 +1,12 @@
+services:
+  frontend:
+    image: my-relationship-app-client
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    environment:
+      - HOST=0.0.0.0
+    ports:
+      - "4200:4200"
+    volumes:
+      - ../frontend:/app

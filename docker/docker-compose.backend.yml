@@ -1,6 +1,6 @@
 services:
   backend:
-    image: my-relationship-app
+    image: my-relationship-app-backend
     build:
       context: ../backend
       dockerfile: Dockerfile

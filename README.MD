@@ -125,5 +125,5 @@ CMD npx nodemon
 
 run the docker commands to test the project:
 
-docker build =t client .
+docker build -t client .
 docker run -it -v $(pwd):/app -p 4200:4200 client
