@@ -195,3 +195,131 @@ services:
 
 ps: the volumes for cert is essential to allow the developer update the certificate without copying it directly to the image.
 
+Create the nginx folder inside the frontend folder
+Create the nginx.conf file inside the nginx folder
+Create the default.conf file inside the nginx folder
+
+copy certs folder from the backend folder to frontend folder, we can keep the same
+cert for a while.
+
+The content for nginx.conf file:
+
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+    
+    access_log /var/log/nginx/access.log main;
+
+    sendfile on;
+    keepalive_timeout 65;
+
+    include /etc/nginx/conf.d/*.conf;
+}
+
+content for default.conf file:
+
+server {
+    listen 80;
+    server_name my-relationship-app.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name my-relationship-app.com;
+
+    # SSL Configuration
+    ssl_certificate /etc/nginx/ssl/localhost.crt;
+    ssl_certificate_key /etc/nginx/ssl/localhost.key;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    root /usr/share/nginx/html;
+
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    gzip on;
+    gzip_types text/plain application/javascript application/x-javascript text/javascript text/css application/xml text/xml application/json image/svg+xml;
+    gzip_proxied any;
+    gzip_vary on;
+}
+
+The Dockerfile.prod for the frontend app:
+
+# Stage 1: Build Angular Application
+FROM node:20.11.1 AS build
+WORKDIR /app
+
+# Copy package.json and package-lock.json to install dependencies
+COPY ./package.json ./package-lock.json ./
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Build the Angular app for production
+RUN npm run build --prod
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine AS prod-stage
+
+ARG ANGULAR_PROJECT_NAME
+
+# Copy the built Angular app from the build stage
+COPY --from=build /app/dist/${ANGULAR_PROJECT_NAME}/browser /usr/share/nginx/html
+
+# Copy custom Nginx configuration
+COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
+
+# Copy SSL certificates
+COPY certs/localhost.key /etc/nginx/ssl/localhost.key
+COPY certs/localhost.crt /etc/nginx/ssl/localhost.crt
+
+# Expose port 80 for HTTP and HTTPS traffic
+EXPOSE 80
+EXPOSE 443
+
+# Start Nginx server
+CMD ["nginx", "-g", "daemon off;"]
+
+to build this image:
+
+docker build -f Dockerfile.prod --build-arg ANGULAR_PROJECT_NAME=client -t my-angular-app-test .
+
+to run this image:
+
+docker run --rm -p 4280:80 -p 443:443 -e ANGULAR_PROJECT_NAME=client my-angular-app-test 
+
+Create the docker-compose.prod.frontend.yml inside root/docker:
+
+services:
+  frontend:
+    image: my-relationship-app-client-prod
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.prod
+      args:
+        ANGULAR_PROJECT_NAME: client
+    ports:
+      - "80:80"
+      - "443:443"

@@ -1,0 +1,11 @@
+services:
+  frontend:
+    image: my-relationship-app-client-prod
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.prod
+      args:
+        ANGULAR_PROJECT_NAME: client
+    ports:
+      - "80:80"
+      - "443:443"
