@@ -9,8 +9,13 @@ RUN npm install
 COPY . .
 
 EXPOSE 4200
+EXPOSE 4201
 
 ENV PATH="/app/node_modules/.bin:$PATH"
 ENV HOST=0.0.0.0
+ENV HTTP_PORT=4200
+ENV HTTPS_PORT=4201
+ENV SSL_CERT_PATH=/app/certs/localhost.crt
+ENV SSL_KEY_PATH=/app/certs/localhost.key
 
 CMD npx nodemon

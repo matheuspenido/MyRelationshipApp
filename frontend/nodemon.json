@@ -4,5 +4,5 @@
     "execMap": {
         "json": "npm install"
     },
-    "exec": "ng serve --host ${HOST}"
+    "exec": "ng serve --host ${HOST} --port ${HTTP_PORT} & ng serve --host ${HOST} --port ${HTTPS_PORT} --ssl true --ssl-cert ${SSL_CERT_PATH} --ssl-key ${SSL_KEY_PATH}"
 }

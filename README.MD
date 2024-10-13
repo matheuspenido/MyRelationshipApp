@@ -1,21 +1,26 @@
 Documented steps to reproduce the creation of this project structure:
 
-folders:
+Create the folder structure:
 
 MyRelationshipApp/
 backend/
 frontend/
-Create the app:
-docker run -it -v $(pwd)/backend:/app mcr.microsoft.com/dotnet/sdk:8.0 bash
-inside the container:
+
+===========================================
+
+Create the backend app:
+docker run --rm -it -v $(pwd)/backend:/app mcr.microsoft.com/dotnet/sdk:8.0 bash
+
+inside the container, do:
 cd app
 dotnet new sln -n MyRelationshipApp
 dotnet new webapi -n MyRelationshipApp.API
 dotnet sln MyRelationshipApp.sln add MyRelationshipApp.API/MyRelationshipApp.API.csproj
-exit -> back to host
+exit
 
-cd ..
-sudo chown -R Matheus:Matheus .
+exit command will return to host.
+change the files permission, to do that, go to the root folder and do:
+sudo chown -R Matheus:Matheus ./backend
 
 Verify if the aspnet runtime is installed
 dotnet watch run
@@ -28,36 +33,45 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout localhost.key -out 
 
 Create pfx from certificate and key:
 openssl pkcs12 -export -out localhost.pfx -inkey localhost.key -in localhost.crt -passout pass:myrelationshipapp
-put the pfx on certs folder, inside the root folder
+put the pfx on certs folder, inside the root backend folder.
 
 Add Dockerfile on backend folder:
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dev
+
 ENV PROJECT_PATH=./MyRelationshipApp.API
+
 WORKDIR /app
+
 EXPOSE 8080
 EXPOSE 8081
+
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+
 CMD dotnet watch run --project "$PROJECT_PATH" --urls "http://+:8080;https://+:8081" --no-hot-reload
 
-build the image, passing the executable project to env variable PROJECT_PATH
+build the image, passing the executable project to env variable PROJECT_PATH, inside backend folder do:
 docker build --build-arg PROJECT_PATH=./MyRelationshipApp.API -t my-relationship-app .
 
 Run the build image, listening from 8080 to 5000
-inside backend folder:
-docker run -e PROJECT_PATH=./MyRelationshipApp.API -p 5000:8080 -p 5001:8081 -v $(pwd):/app -v $(pwd)/certs:/app/https:ro my-relationship-app
+inside backend folder, do:
+docker run --rm -e PROJECT_PATH=./MyRelationshipApp.API -p 5000:8080 -p 5001:8081 -v $(pwd):/app -v $(pwd)/certs:/app/https:ro my-relationship-app
 
-Open the url: http://localhost:5000/swagger
-Create the dockercompose file in docker folder (inside the root folder)
+Open the url: http://localhost:5000/swagger and https://localhost:5001/swagger to verify if everything is right.
+
+Try to change some code inside the program.cs to verify is the auto reaload will work, after the file was saved.
+
+Create the docker-compose.dev.backend.yml file in docker folder (docker fold will be created inside the root folder)
+
 services:
   backend:
-    image: my-relationship-app
+    image: my-relationship-app-backend-dev
     build:
       context: ../backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     environment:
-      - PROJECT_PATH=./backend/MyRelationshipApp/API
+      - PROJECT_PATH=/app/MyRelationshipApp.API/
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=https://+:8081;http://+:8080
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
@@ -67,17 +81,19 @@ services:
       - "5001:8081"
     volumes:
       - ../backend/:/app
-      - ../backend/certs:/https:ro
+      - ../backend/certs:/app/https:ro
 
 after that: 
 
 docker-compose -f docker-compose.backend.yml up --build
 should start the app.
+Test it again for https and https
 
+===============================================
 install the front-end project:
 
-on the root folder of the project:
-docker run -it -v $(pwd)/frontend:/app node:20.11.1 bash
+on the frontend folder, do:
+docker run --rm -it -v $(pwd):/app node:20.11.1 bash
 
 inside the container:
 install angular:
@@ -91,19 +107,8 @@ This command will create the angular inside the /app folder and the app folder i
 To come back to host and leave the iterative image of node:
 exit
 
-change the files permission:
-cd ..
+change the files permission, to do that, go to the root folder and do:
 sudo chown -R Matheus:Matheus ./frontend
-
-create the nodemon inside the root folder for the frontend, call the file nodemon.js:
-{
-    "watch": ["src/", "angular.json", "package.json", "tsconfig.json"],
-    "ext": "ts, html,css,scss,json",
-    "execMap": {
-        "json": "npm install"
-    },
-    "exec": "ng serve --host ${HOST}"
-}
 
 create the dockerfile inside the frontend folder using nodemon to run and execute the changes and reload the project:
 
@@ -118,16 +123,55 @@ RUN npm install
 COPY . .
 
 EXPOSE 4200
+EXPOSE 4201
 
 ENV PATH="/app/node_modules/.bin:$PATH"
 ENV HOST=0.0.0.0
+ENV HTTP_PORT=4200
+ENV HTTPS_PORT=4201
+ENV SSL_CERT_PATH=/app/certs/localhost.crt
+ENV SSL_KEY_PATH=/app/certs/localhost.key
 
 CMD npx nodemon
+
+create the nodemon inside the root folder for the frontend, call the file nodemon.js:
+{
+    "watch": ["src/", "angular.json", "package.json", "tsconfig.json"],
+    "ext": "ts, html,css,scss,json",
+    "execMap": {
+        "json": "npm install"
+    },
+    "exec": "ng serve --host ${HOST} --port ${HTTP_PORT} & ng serve --host ${HOST} --port ${HTTPS_PORT} --ssl true --ssl-cert ${SSL_CERT_PATH} --ssl-key ${SSL_KEY_PATH}"
+}
 
 run the docker commands to test the project:
 
 docker build -t client .
-docker run -it -v $(pwd):/app -p 4200:4200 client
+docker run --rm -it -v $(pwd):/app -p 4200:4200 -p 4201:4201 client
+
+Open the url: http://localhost:4200 and https://localhost:4201 to verify if everything is right.
+
+Try to change some code inside the index.html page to verify is the auto reload will work, after the file was saved.
+
+Create the docker-compose.dev.frontend.yml file in docker folder (docker fold will be created inside the root folder):
+
+services:
+  frontend:
+    image: my-relationship-app-client-dev
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - HOST=0.0.0.0
+    ports:
+      - "4200:4200"
+      - "4201:4201"
+    volumes:
+      - ../frontend:/app
+
+========================================
+
+Backend prod env:
 
 Rename the previous Dockerfile inside backend folder to Dockerfile.dev
 Create a second Dockerfile.prod file, next to the Dockerfile.dev with the following content:
@@ -169,7 +213,7 @@ To build this image:
 docker build -f Dockerfile.prod --build-arg PROJECT_PATH=./MyRelationshipApp.API -t my-relationship-app .
 
 To run this image:
-docker run -e PROJECT_PATH=./MyRelationshipApp.API -p 5000:8080 -p 5001:8443 -it my-relationship-app
+docker run --rm -e PROJECT_PATH=./MyRelationshipApp.API -p 5000:8080 -p 5001:8443 -it my-relationship-app
 
 Create the docker compose file docker-compose.prod.backend.yml:
 
@@ -194,6 +238,10 @@ services:
       - ../backend/certs:/app/https:ro
 
 ps: the volumes for cert is essential to allow the developer update the certificate without copying it directly to the image.
+
+==============================================================
+
+Nginx to prod env for Angular:
 
 Create the nginx folder inside the frontend folder
 Create the nginx.conf file inside the nginx folder
@@ -308,7 +356,7 @@ docker build -f Dockerfile.prod --build-arg ANGULAR_PROJECT_NAME=client -t my-an
 
 to run this image:
 
-docker run --rm -p 4280:80 -p 443:443 -e ANGULAR_PROJECT_NAME=client my-angular-app-test 
+docker run --rm -p 80:80 -p 443:443 -e ANGULAR_PROJECT_NAME=client my-angular-app-test 
 
 Create the docker-compose.prod.frontend.yml inside root/docker:
 
@@ -323,3 +371,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+
+To run this docker compose file, go to docker folder and do:
+
+docker-compose -f docker-compose.dev.frontend.yml up --build
+
+The app should work for http://localhost:4200 and https://localhost:4201 and display angular information
