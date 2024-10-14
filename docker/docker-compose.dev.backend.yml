@@ -4,12 +4,12 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile.dev
-    environment:
-      - PROJECT_PATH=/app/MyRelationshipApp.API/
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:8081;http://+:8080
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+      args:
+        PROJECT_NAME: ${PROJECT_NAME}
+        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+        ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+        CERT_PATH: ${CERT_PATH}
+        CERT_KEY: ${CERT_KEY}
     ports:
       - "5000:8080"
       - "5001:8081"

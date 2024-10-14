@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile.prod
       args:
         ANGULAR_PROJECT_NAME: client
+    env_file:
+      - .env.prod
     ports:
       - "80:80"
       - "443:443"

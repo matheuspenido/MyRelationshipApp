@@ -1,13 +1,23 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dev
 
-ENV PROJECT_PATH=./MyRelationshipApp.API
+ARG PROJECT_NAME
+ARG ASPNETCORE_ENVIRONMENT
+ARG ASPNETCORE_URLS
+ARG CERT_PATH
+ARG CERT_KEY
+
+ENV PROJECT_NAME=${PROJECT_NAME}
+ENV ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+ENV ASPNETCORE_URLS=${ASPNETCORE_URLS}
+ENV CERT_PATH=${CERT_PATH}
+ENV CERT_KEY=${CERT_KEY}
 
 WORKDIR /app
 
 EXPOSE 8080
 EXPOSE 8081
 
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/app/${CERT_PATH}"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_KEY}
 
-CMD dotnet watch run --project "$PROJECT_PATH" --urls "http://+:8080;https://+:8081" --no-hot-reload
+CMD dotnet watch run --project "/app/$PROJECT_NAME/" --urls "${ASPNETCORE_URLS}" --no-hot-reload

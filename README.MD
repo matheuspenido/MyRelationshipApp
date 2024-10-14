@@ -162,6 +162,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile.dev
     environment:
+      - NODE_ENV=development
       - HOST=0.0.0.0
     ports:
       - "4200:4200"
@@ -377,3 +378,18 @@ To run this docker compose file, go to docker folder and do:
 docker-compose -f docker-compose.dev.frontend.yml up --build
 
 The app should work for http://localhost:4200 and https://localhost:4201 and display angular information
+
+
+
+
+
+
+
+
+
+
+docker build -f Dockerfile.dev --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Development --build-arg ASPNETCORE_URLS="http://+:8080;https://+:8081" --build-arg CERT_PATH=https/localhost.pfx --build-arg CERT_KEY=myrelationshipapp -t my-relationship-app-backend-dev .
+
+docker run --rm -v $(pwd):/app -v $(pwd)/certs:/app/https -p 5000:8080 -p 5001:8081 -it my-relationship-app-backend-dev
+
+docker-compose -f ./docker/docker-compose.dev.backend.yml --env-file .env.dev up --build

@@ -1,0 +1,35 @@
+services:
+  backend:
+    image: my-relationship-app-backend-full-dev
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env.dev
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    volumes:
+      - ../backend/:/app
+      - ../backend/certs:/app/https:ro
+    networks:
+      - dev-network
+
+  frontend:
+    image: my-relationship-app-frontend-full-dev
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - .env.dev
+    ports:
+      - "4200:4200"
+      - "4201:4201"
+    volumes:
+      - ../frontend:/app
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge

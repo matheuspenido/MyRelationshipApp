@@ -6,12 +6,8 @@ services:
       dockerfile: Dockerfile.prod
       args:
         PROJECT_PATH: ./MyRelationshipApp.API
-    environment:
-      - PROJECT_PATH=./MyRelationshipApp.API
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=https://+:8443;http://+:8080
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/https/localhost.pfx
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=myrelationshipapp
+    env_file:
+      - .env.prod
     ports:
       - "5000:8080"
       - "5001:8443"
