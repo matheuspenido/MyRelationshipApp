@@ -393,3 +393,8 @@ docker build -f Dockerfile.dev --build-arg PROJECT_NAME=MyRelationshipApp.API --
 docker run --rm -v $(pwd):/app -v $(pwd)/certs:/app/https -p 5000:8080 -p 5001:8081 -it my-relationship-app-backend-dev
 
 docker-compose -f ./docker/docker-compose.dev.backend.yml --env-file .env.dev up --build
+
+
+docker build -f Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Production --build-arg ASPNETCORE_URLS="http://+:8080;https://+:8443" --build-arg CERT_PATH=certs/localhost.pfx --build-arg CERT_KEY=myrelationshipapp -t my-relationship-app-backend-prod .
+
+docker run --rm -it -v $(pwd)/certs:/app/https -p 5000:8080 -p 5001:8443  my-relationship-app-backend-prod
