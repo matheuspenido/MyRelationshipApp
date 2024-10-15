@@ -386,7 +386,7 @@ The app should work for http://localhost:4200 and https://localhost:4201 and dis
 
 
 
-
+inside the backend folder:
 
 docker build -f Dockerfile.dev --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Development --build-arg ASPNETCORE_URLS="http://+:8080;https://+:8081" --build-arg CERT_PATH=https/localhost.pfx --build-arg CERT_KEY=myrelationshipapp -t my-relationship-app-backend-dev .
 
@@ -394,6 +394,7 @@ docker run --rm -v $(pwd):/app -v $(pwd)/certs:/app/https -p 5000:8080 -p 5001:8
 
 docker-compose -f ./docker/docker-compose.dev.backend.yml --env-file .env.dev up --build
 
+inside backend folder:
 
 docker build -f Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Production --build-arg ASPNETCORE_URLS="http://+:8080;https://+:8443" --build-arg CERT_PATH=certs/localhost.pfx --build-arg CERT_KEY=myrelationshipapp -t my-relationship-app-backend-prod .
 
