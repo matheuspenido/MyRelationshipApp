@@ -1,16 +1,32 @@
 services:
   backend:
-    image: my-relationship-app-backend-prod
+    container_name: my-relationship-app-api
     build:
       context: ../backend
       dockerfile: Dockerfile.prod
       args:
-        PROJECT_NAME: ${PROJECT_NAME}
-        ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
-        ASPNETCORE_URLS: ${ASPNETCORE_URLS}
-        CERT_PATH: ${CERT_PATH}
-        CERT_KEY: ${CERT_KEY}
+        PROJECT_NAME: MyRelationshipApp.API
+    env_file:
+      - /home/Matheus/MyCourses/Udemy/BuildAppWithAngularAndDotnet/.env.prod
+    networks:
+      - rp-network
+
+  nginx:
+    container_name: nginx-rp
+    build:
+      context: ../backend-server
+      dockerfile: Dockerfile.prod
     ports:
-      - "5000:8080"
+      - "80:80"
+      - "443:443"
     volumes:
-      - ../backend/certs:/app/https:ro
+      - ../backend-server/certs:/etc/nginx/ssl/
+      - ../backend-server/nginx:/etc/nginx/conf.d/
+    env_file:
+      - /home/Matheus/MyCourses/Udemy/BuildAppWithAngularAndDotnet/.env.prod
+    networks:
+      - rp-network
+
+networks:
+  rp-network:
+    driver: bridge
