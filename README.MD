@@ -420,7 +420,7 @@ To create NGINX RP for backend:
 docker build -f ./backend-server/Dockerfile.prod ./backend-server -t my-backend-server
 
 To create the API container:
-docker build -f ./backend/Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Production --build-arg ASPNETCORE_URL="http://+:8080"  -t my-backend-api ./backend
+docker build -f ./backend/Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API -t my-backend-api ./backend
 
 To create the network to allow communication between the backend and RP server:
 docker network create my-network
