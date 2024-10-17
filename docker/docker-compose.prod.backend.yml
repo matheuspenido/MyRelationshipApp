@@ -12,6 +12,5 @@ services:
         CERT_KEY: ${CERT_KEY}
     ports:
       - "5000:8080"
-      - "5001:8443"
     volumes:
       - ../backend/certs:/app/https:ro

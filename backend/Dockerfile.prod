@@ -22,23 +22,15 @@ WORKDIR /app
 ARG PROJECT_NAME
 ARG ASPNETCORE_ENVIRONMENT
 ARG ASPNETCORE_URLS
-ARG CERT_PATH
-ARG CERT_KEY
 
 ENV PROJECT_NAME=${PROJECT_NAME}
 ENV ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
 ENV ASPNETCORE_URLS=${ASPNETCORE_URLS}
-ENV CERT_PATH=${CERT_PATH}
-ENV CERT_KEY=${CERT_KEY}
 
 # Copy the published files from the build stage
 COPY --from=build /app/publish .
 
-# Expose the default ports for .NET 8 (8080 for HTTP and 8443 for HTTPS)
+# Expose the default ports for .NET 8 (8080) the SSL will be managed by NGINX.
 EXPOSE 8080
-EXPOSE 8443
-
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/app/${CERT_PATH}"
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password=$CERT_KEY
 
 ENTRYPOINT ["sh", "-c", "dotnet /app/${PROJECT_NAME}.dll"]

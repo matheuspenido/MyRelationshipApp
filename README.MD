@@ -399,3 +399,34 @@ inside backend folder:
 docker build -f Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Production --build-arg ASPNETCORE_URLS="http://+:8080;https://+:8443" --build-arg CERT_PATH=certs/localhost.pfx --build-arg CERT_KEY=myrelationshipapp -t my-relationship-app-backend-prod .
 
 docker run --rm -it -v $(pwd)/certs:/app/https -p 5000:8080 -p 5001:8443  my-relationship-app-backend-prod
+
+
+To build prod for frontend with .env.prod file:
+The same structure can be created for other envs but dev, ok?
+
+dockebuild -f ./frontend/Dockerfile.prod --build-arg ANGULAR_PROJECT_NAME=client -t test-angular-prod-envvariables ./frontend
+
+docker run --rm --env-file .env.prod -v $(pwd)/frontend/certs/:/etc/nginx/ssl -v $(pwd)/frontend/nginx/nginx.conf:/etc/nginx/nginx.conf -v $(pwd)/frontend/nginx/default.conf.template:/etc/nginx/conf.d/default.conf.template -p 80:80 -p 443:443 test-angular-prod-envvariables
+
+
+
+
+
+
+=======================================
+on the root folder:
+
+To create NGINX RP for backend:
+docker build -f ./backend-server/Dockerfile.prod ./backend-server -t my-backend-server
+
+To create the API container:
+docker build -f ./backend/Dockerfile.prod --build-arg PROJECT_NAME=MyRelationshipApp.API --build-arg ASPNETCORE_ENVIRONMENT=Production --build-arg ASPNETCORE_URL="http://+:8080"  -t my-backend-api ./backend
+
+To create the network to allow communication between the backend and RP server:
+docker network create my-network
+
+To run the API (addressed by backend-api)on my-network:
+docker run -d --name backend-api --network my-network -e PROJECT_NAME=MyRelationshipApp.API -e ASPNETCORE_ENVIRONMENT=Production -e ASPNETCORE_URLS="http://+:8080" my-backend-api
+
+To run the server on my-network
+docker run -d --name backend-server --network my-network -v $(pwd)/backend-server/certs:/etc/nginx/ssl/ -v $(pwd)/backend-server/nginx:/etc/nginx/conf.d/ -p 443:443 -p 80:80 -e BACKEND_DOMAIN=localhost -e BACKEND_API_URL=backend-api:8080 -e SSL_CERT_FILE=localhost.crt -e SSL_KEY_FILE=localhost.key my-backend-server
