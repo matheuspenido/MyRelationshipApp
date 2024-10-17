@@ -7,7 +7,7 @@ services:
       args:
         PROJECT_NAME: MyRelationshipApp.API
     env_file:
-      - /home/Matheus/MyCourses/Udemy/BuildAppWithAngularAndDotnet/.env.prod
+      - ../.env.prod
     networks:
       - rp-network
 
@@ -23,7 +23,7 @@ services:
       - ../backend-server/certs:/etc/nginx/ssl/
       - ../backend-server/nginx:/etc/nginx/conf.d/
     env_file:
-      - /home/Matheus/MyCourses/Udemy/BuildAppWithAngularAndDotnet/.env.prod
+      - ../.env.prod
     networks:
       - rp-network
 
